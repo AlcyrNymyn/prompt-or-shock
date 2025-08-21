@@ -60,6 +60,10 @@ impl SyncedSettings {
         self.death_shock.load(Ordering::Relaxed)
     }
 
+    pub fn death_shock_delay(&self) -> u8 {
+        self.death_shock_delay.load(Ordering::Relaxed)
+    }
+
     pub fn enable_warning_vibrate(&self) -> bool {
         self.enable_warning_vibrate.load(Ordering::Relaxed)
     }
