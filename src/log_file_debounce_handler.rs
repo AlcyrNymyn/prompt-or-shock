@@ -1,4 +1,4 @@
-use std::{ops::Mul, sync::Arc};
+use std::sync::Arc;
 
 use notify_debouncer_mini::DebounceEventHandler;
 use tokio::time::Instant;
