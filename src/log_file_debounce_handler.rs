@@ -40,11 +40,10 @@ impl LogFileDebounceHandler {
                     println!("Vibrate command error: {e:?}");
                     return;
                 }
-                let mut duration = Instant::now().duration_since(before_time);
-                // assume that the shock request will take approx. the same time.
-                duration *= 2;
 
-                // if the estimated duration is less than 1 second, sleep for the difference.
+                // This duration is used as an estimate for how long the Shock request will take.
+                let duration = Instant::now().duration_since(before_time);
+                // If the estimated duration is less than 1 second, sleep for the difference.
                 if duration.as_secs() < 1 {
                     tokio::time::sleep(tokio::time::Duration::from_secs(1) - duration).await;
                 }
