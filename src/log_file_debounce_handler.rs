@@ -1,13 +1,14 @@
+use std::sync::Arc;
+
 use notify_debouncer_mini::DebounceEventHandler;
 
-use crate::{log_file_reader::LogFileReader, pishock_client::PiShockClient};
+use crate::{app::SyncedSettings, log_file_reader::LogFileReader, pishock_client::PiShockClient};
 
 pub struct LogFileDebounceHandler {
     pishock_clinet: PiShockClient,
     reader: LogFileReader,
     expected_string: String,
-    life_loss_shock: u8,
-    death_shock: u8,
+    settings: Arc<SyncedSettings>,
     tokio_runtime: tokio::runtime::Runtime,
 }
 
@@ -16,15 +17,13 @@ impl LogFileDebounceHandler {
         pishock_clinet: PiShockClient,
         reader: LogFileReader,
         expected_string: String,
-        life_loss_shock: u8,
-        death_shock: u8,
+        settings: Arc<SyncedSettings>,
     ) -> Self {
         Self {
             pishock_clinet,
             reader,
             expected_string,
-            life_loss_shock,
-            death_shock,
+            settings,
             tokio_runtime: tokio::runtime::Runtime::new().unwrap(),
         }
     }
@@ -51,10 +50,10 @@ impl DebounceEventHandler for LogFileDebounceHandler {
         while let Some(line) = self.reader.read_line() {
             if line.ends_with(&self.expected_string) {
                 println!("Life Loss Detected");
-                self.shock_with_delay(self.life_loss_shock);
+                self.shock_with_delay(self.settings.life_loss_shock());
             } else if line.ends_with("Local Death") {
                 println!("Death Detected");
-                self.shock_with_delay(self.death_shock);
+                self.shock_with_delay(self.settings.death_shock());
             }
         }
     }
