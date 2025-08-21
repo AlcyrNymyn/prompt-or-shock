@@ -2,7 +2,7 @@ use std::{
     io::{Read, Write},
     sync::{
         Arc,
-        atomic::{AtomicU8, Ordering},
+        atomic::{AtomicBool, AtomicU8, Ordering},
     },
     time::{Duration, Instant},
 };
@@ -25,11 +25,18 @@ struct Settings {
     life_loss_shock: u8,
     #[serde(default)]
     death_shock: u8,
+    #[serde(default = "default_true")]
+    enable_warning_vibrate: bool,
+}
+
+const fn default_true() -> bool {
+    true
 }
 
 pub struct SyncedSettings {
     life_loss_shock: AtomicU8,
     death_shock: AtomicU8,
+    enable_warning_vibrate: AtomicBool,
 }
 
 impl SyncedSettings {
@@ -37,6 +44,7 @@ impl SyncedSettings {
         Arc::new(Self {
             life_loss_shock: AtomicU8::new(settings.life_loss_shock),
             death_shock: AtomicU8::new(settings.death_shock),
+            enable_warning_vibrate: AtomicBool::new(settings.enable_warning_vibrate),
         })
     }
 
@@ -46,6 +54,10 @@ impl SyncedSettings {
 
     pub fn death_shock(&self) -> u8 {
         self.death_shock.load(Ordering::Relaxed)
+    }
+
+    pub fn enable_warning_vibrate(&self) -> bool {
+        self.enable_warning_vibrate.load(Ordering::Relaxed)
     }
 }
 
@@ -71,6 +83,7 @@ impl Default for PromptOrShockApp {
                 shocker_share_code: String::default(),
                 life_loss_shock: 0,
                 death_shock: 0,
+                enable_warning_vibrate: true,
             }
         };
         let synced_settings = SyncedSettings::from_settings(&settings);
@@ -184,6 +197,18 @@ impl eframe::App for PromptOrShockApp {
                 self.synced_settings
                     .death_shock
                     .store(self.settings.death_shock, Ordering::Relaxed);
+            }
+            if ui
+                .checkbox(
+                    &mut self.settings.enable_warning_vibrate,
+                    "Enable Warning Vibrate",
+                )
+                .changed()
+            {
+                is_dirty = true;
+                self.synced_settings
+                    .enable_warning_vibrate
+                    .store(self.settings.enable_warning_vibrate, Ordering::Relaxed);
             }
         });
 

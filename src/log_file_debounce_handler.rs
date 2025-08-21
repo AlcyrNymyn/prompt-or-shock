@@ -1,6 +1,7 @@
-use std::sync::Arc;
+use std::{ops::Mul, sync::Arc};
 
 use notify_debouncer_mini::DebounceEventHandler;
+use tokio::time::Instant;
 
 use crate::{app::SyncedSettings, log_file_reader::LogFileReader, pishock_client::PiShockClient};
 
@@ -30,13 +31,24 @@ impl LogFileDebounceHandler {
 
     fn shock_with_delay(&self, intensity: u8) {
         let client_copy = self.pishock_clinet.clone();
+        let settings = self.settings.clone();
         self.tokio_runtime.spawn(async move {
-            println!("Warning Vibrate...");
-            if let Err(e) = client_copy.vibrate(25, 1).await {
-                println!("Vibrate command error: {e:?}");
-                return;
+            if settings.enable_warning_vibrate() {
+                println!("Warning Vibrate...");
+                let before_time = Instant::now();
+                if let Err(e) = client_copy.vibrate(25, 1).await {
+                    println!("Vibrate command error: {e:?}");
+                    return;
+                }
+                let mut duration = Instant::now().duration_since(before_time);
+                // assume that the shock request will take approx. the same time.
+                duration *= 2;
+
+                // if the estimated duration is less than 1 second, sleep for the difference.
+                if duration.as_secs() < 1 {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1) - duration).await;
+                }
             }
-            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
             println!("Shocking...");
             if let Err(e) = client_copy.shock(intensity, 1).await {
                 println!("Shock command error: {e:?}");
