@@ -25,6 +25,8 @@ struct Settings {
     life_loss_shock: u8,
     #[serde(default)]
     death_shock: u8,
+    #[serde(default)]
+    death_shock_delay: u8,
     #[serde(default = "default_true")]
     enable_warning_vibrate: bool,
 }
@@ -36,6 +38,7 @@ const fn default_true() -> bool {
 pub struct SyncedSettings {
     life_loss_shock: AtomicU8,
     death_shock: AtomicU8,
+    death_shock_delay: AtomicU8,
     enable_warning_vibrate: AtomicBool,
 }
 
@@ -44,6 +47,7 @@ impl SyncedSettings {
         Arc::new(Self {
             life_loss_shock: AtomicU8::new(settings.life_loss_shock),
             death_shock: AtomicU8::new(settings.death_shock),
+            death_shock_delay: AtomicU8::new(settings.death_shock_delay),
             enable_warning_vibrate: AtomicBool::new(settings.enable_warning_vibrate),
         })
     }
@@ -83,6 +87,7 @@ impl Default for PromptOrShockApp {
                 shocker_share_code: String::default(),
                 life_loss_shock: 0,
                 death_shock: 0,
+                death_shock_delay: 0,
                 enable_warning_vibrate: true,
             }
         };
@@ -177,6 +182,21 @@ impl eframe::App for PromptOrShockApp {
                 }
             }
 
+            ui.separator();
+
+            if ui
+                .checkbox(
+                    &mut self.settings.enable_warning_vibrate,
+                    "Enable Warning Vibrate",
+                )
+                .changed()
+            {
+                is_dirty = true;
+                self.synced_settings
+                    .enable_warning_vibrate
+                    .store(self.settings.enable_warning_vibrate, Ordering::Relaxed);
+            }
+
             if ui
                 .add(
                     egui::Slider::new(&mut self.settings.life_loss_shock, 0..=100)
@@ -198,18 +218,19 @@ impl eframe::App for PromptOrShockApp {
                     .death_shock
                     .store(self.settings.death_shock, Ordering::Relaxed);
             }
-            if ui
-                .checkbox(
-                    &mut self.settings.enable_warning_vibrate,
-                    "Enable Warning Vibrate",
-                )
-                .changed()
-            {
-                is_dirty = true;
-                self.synced_settings
-                    .enable_warning_vibrate
-                    .store(self.settings.enable_warning_vibrate, Ordering::Relaxed);
-            }
+
+            ui.horizontal(|ui| {
+                if ui
+                    .add(egui::DragValue::new(&mut self.settings.death_shock_delay))
+                    .changed()
+                {
+                    is_dirty = true;
+                    self.synced_settings
+                        .death_shock_delay
+                        .store(self.settings.death_shock_delay, Ordering::Relaxed);
+                }
+                ui.label("Death Shock Delay (seconds)");
+            });
         });
 
         // Debounce changes - will save 3 seconds after last change.
