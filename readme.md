@@ -1,6 +1,6 @@
 # Configuration
 All currently available configuration options are visible in the app. This includes some settings that must be set before pressing the start button:
- - VRChat Username
+ - VRChat Username. This is case insensitive.
  - PiShock Username. This is case insensitive.
  - PiShock API Key. You can generate the API key after logging in to your PiShock account by clicking Menu in the top right to open a menu dropdown, then Account to get to the menu page. Here, there will be a button to Generate API Key.
  - Shocker Share Code. This must be a share code either already claimed by you, or a code that is unclaimed. If it is unclaimed, it will be claimed by you once the application uses the code for a shock.
