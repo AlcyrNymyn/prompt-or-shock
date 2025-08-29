@@ -64,8 +64,9 @@ impl LogFileDebounceHandler {
 
 impl DebounceEventHandler for LogFileDebounceHandler {
     fn handle_event(&mut self, _: notify_debouncer_mini::DebounceEventResult) {
+        let expected_str = self.expected_string.to_lowercase();
         while let Some(line) = self.reader.read_line() {
-            if line.ends_with(&self.expected_string) {
+            if line.to_lowercase().ends_with(&expected_str) {
                 println!("Life Loss Detected");
                 self.shock_with_delay(self.settings.life_loss_shock(), false);
             } else if line.ends_with("Local Death") {
